@@ -45,12 +45,11 @@ void MainWindow::on_pushButton_clicked()
         qRegisterMetaType<QJsonDocument>();
         QJsonArray jsonArray = QJsonDocument::fromJson(Response.toUtf8()).array();
         QJsonObject jsonObject = jsonArray.at(0).toObject();
-
         QString country = jsonObject.value("country").toString();
-        QString state = jsonObject.value("state").toString();
+        QString name = jsonObject.value("name").toString();
 
                 QNetworkAccessManager Manager2;
-                QString keke = "http://api.weatherapi.com/v1/current.json?key=3550410010fb4e9ea7c05942230108&q=" + state;
+                QString keke = "http://api.weatherapi.com/v1/current.json?key=3550410010fb4e9ea7c05942230108&q=" + name;
                 qDebug()<<"api call" << keke;
                 QUrl APIurl2(keke);
                 QNetworkRequest request2(APIurl2);
@@ -71,7 +70,7 @@ void MainWindow::on_pushButton_clicked()
 
                     QString answer1 = QString("Страна: %1\nГород: %2\nТемпература: %3\nСкорость ветра: %4\nОписание: %5\nВлажность: %6")
                         .arg(country)
-                        .arg(state)
+                        .arg(name)
                         .arg(temp_c)
                         .arg(wind_kph)
                         .arg(condition)
