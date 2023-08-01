@@ -68,13 +68,13 @@ void MainWindow::on_pushButton_clicked()
                     int humidity = jsonObject["current"].toObject()["humidity"].toInt();
                     qDebug() << "ТЕМПЕРАТУРА" << temp_c << wind_kph << condition << humidity;
 
-                    QString answer1 = QString("Страна: %1\nГород: %2\nТемпература: %3\nСкорость ветра: %4\nОписание: %5\nВлажность: %6")
+                    QString answer1 = QString("Страна: \"%1\"\nГород: \"%2\"\nТемпература: %3°C\nВлажность: %4%\nОписание: %5\nСкорость ветра: %6м/с")
                         .arg(country)
                         .arg(name)
                         .arg(temp_c)
-                        .arg(wind_kph)
+                        .arg(humidity)
                         .arg(condition)
-                        .arg(humidity);
+                        .arg(wind_kph);
 
                     ui->textBrowser->setText(answer1);
                   } else {
