@@ -1,13 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QString>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonValue>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
-#include <QEventLoop>
 
 Q_DECLARE_METATYPE(QJsonDocument)
 
@@ -25,50 +17,57 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_clicked()
 {
-    QNetworkAccessManager Manager;
+    // Получение текста из textEdit
     QString city = ui->textEdit->toPlainText();
+    
+    // Формирование URL для получения данных о городе
     QString cityst = "http://api.openweathermap.org/geo/1.0/direct?q=" + city + "&limit=1&appid=50f017c0a0b4e721843d6ba77e25eb44";
+    QNetworkAccessManager Manager;
     QUrl APIurl1(cityst);
     QNetworkRequest request(APIurl1);
-    qDebug()<<"Call http" << cityst;
 
+    // Отправка запроса и ожидание ответа
     QNetworkReply *reply = Manager.get(request);
-
     QEventLoop loop;
     QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
     loop.exec();
 
-    if (reply != nullptr) {
-        QString Response = reply->readAll();
-        qDebug()<<"Api reply" << Response;
+    // Чтение ответа
+    QString Response = reply->readAll();
+    
+    // Регистрация типа QJsonDocument для последующего использования
+    qRegisterMetaType<QJsonDocument>();
+    
+    // Извлечение данных из JSON-ответа
+    QJsonArray jsonArray = QJsonDocument::fromJson(Response.toUtf8()).array();
+    QJsonObject jsonObject = jsonArray.at(0).toObject();
+    QString country = jsonObject.value("country").toString();
+    QString name = jsonObject.value("name").toString();
 
-        qRegisterMetaType<QJsonDocument>();
-        QJsonArray jsonArray = QJsonDocument::fromJson(Response.toUtf8()).array();
-        QJsonObject jsonObject = jsonArray.at(0).toObject();
-        QString country = jsonObject.value("country").toString();
-        QString name = jsonObject.value("name").toString();
+    // Формирование URL для получения данных о погоде
+    QNetworkAccessManager Manager2;
+    QString keke = "http://api.weatherapi.com/v1/current.json?key=3550410010fb4e9ea7c05942230108&q=" + name;
+    QUrl APIurl2(keke);
+    QNetworkRequest request2(APIurl2);
+    QNetworkReply *reply2 = Manager2.get(request2);
 
-                QNetworkAccessManager Manager2;
-                QString keke = "http://api.weatherapi.com/v1/current.json?key=3550410010fb4e9ea7c05942230108&q=" + name;
-                qDebug()<<"api call" << keke;
-                QUrl APIurl2(keke);
-                QNetworkRequest request2(APIurl2);
-                QNetworkReply *reply2 = Manager2.get(request2);
-                QEventLoop loop2;
-                QObject::connect(reply2, &QNetworkReply::finished, &loop2, &QEventLoop::quit);
-                loop2.exec();
-                if (reply2 != nullptr) {
-                    QString weather = reply2->readAll();
-                    qDebug() << "Api reply: " << weather;
-                    QJsonObject jsonObject = QJsonDocument::fromJson(weather.toUtf8()).object();
+    // Отправка запроса и ожидание ответа
+    QEventLoop loop2;
+    QObject::connect(reply2, &QNetworkReply::finished, &loop2, &QEventLoop::quit);
+    loop2.exec();
 
-                    double temp_c = jsonObject["current"].toObject()["temp_c"].toDouble();
-                    double wind_kph = jsonObject["current"].toObject()["wind_kph"].toDouble();
-                    QString condition = jsonObject["current"].toObject()["condition"].toObject()["text"].toString();
-                    int humidity = jsonObject["current"].toObject()["humidity"].toInt();
-                    qDebug() << "ТЕМПЕРАТУРА" << temp_c << wind_kph << condition << humidity;
+    // Чтение ответа
+    QString weather = reply2->readAll();
+    
+    // Извлечение данных из JSON-ответа
+    QJsonObject jsonObject1 = QJsonDocument::fromJson(weather.toUtf8()).object();
+    double temp_c = jsonObject1["current"].toObject()["temp_c"].toDouble();
+    double wind_kph = jsonObject1["current"].toObject()["wind_kph"].toDouble();
+    QString condition = jsonObject1["current"].toObject()["condition"].toObject()["text"].toString();
+    int humidity = jsonObject1["current"].toObject()["humidity"].toInt();
 
-                    QString answer1 = QString("Страна: \"%1\"\nГород: \"%2\"\nТемпература: %3°C\nВлажность: %4%\nОписание: %5\nСкорость ветра: %6м/с")
+    // Формирование строки с информацией о погоде
+    QString answer = QString("Страна: \"%1\"\nГород: \"%2\"\nТемпература: %3°C\nВлажность: %4%\nОписание: %5\nСкорость ветра: %6м/с")
                         .arg(country)
                         .arg(name)
                         .arg(temp_c)
@@ -76,15 +75,6 @@ void MainWindow::on_pushButton_clicked()
                         .arg(condition)
                         .arg(wind_kph);
 
-                    ui->textBrowser->setText(answer1);
-                  } else {
-                      ui->textBrowser->setText("Invalid response");
-                  }
-
-
-
-                }
-
-
-
+    // Вывод строки в textBrowser
+    ui->textBrowser->setText(answer);
 }
