@@ -17,56 +17,46 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_clicked()
 {
-    // Получение текста из textEdit
+    // Get the entered city from the text edit widget
     QString city = ui->textEdit->toPlainText();
-    
-    // Формирование URL для получения данных о городе
-    QString cityst = "http://api.openweathermap.org/geo/1.0/direct?q=" + city + "&limit=1&appid=50f017c0a0b4e721843d6ba77e25eb44";
-    QNetworkAccessManager Manager;
-    QUrl APIurl1(cityst);
-    QNetworkRequest request(APIurl1);
 
-    // Отправка запроса и ожидание ответа
+    // Create a network manager object
+    QNetworkAccessManager Manager;
+
+    // Construct the API URL with the city parameter
+    QString apiUrl = "http://api.weatherapi.com/v1/current.json?key=3550410010fb4e9ea7c05942230108&q=" + city;
+    QUrl APIurl(apiUrl);
+
+    // Create a network request with the API URL
+    QNetworkRequest request(APIurl);
+
+    // Send the GET request and get the reply
     QNetworkReply *reply = Manager.get(request);
+
+    // Create an event loop to wait for the reply to finish
     QEventLoop loop;
+    
+    // Connect the finished signal of the reply to the quit slot of the event loop
     QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    
+    // Start the event loop to wait for the reply
     loop.exec();
 
-    // Чтение ответа
-    QString Response = reply->readAll();
+    // Read the response data from the reply
+    QString weather = reply->readAll();
+
+    // Parse the JSON response
+    QJsonObject jsonObject = QJsonDocument::fromJson(weather.toUtf8()).object();
     
-    // Регистрация типа QJsonDocument для последующего использования
-    qRegisterMetaType<QJsonDocument>();
-    
-    // Извлечение данных из JSON-ответа
-    QJsonArray jsonArray = QJsonDocument::fromJson(Response.toUtf8()).array();
-    QJsonObject jsonObject = jsonArray.at(0).toObject();
-    QString country = jsonObject.value("country").toString();
-    QString name = jsonObject.value("name").toString();
+    // Extract the required information from the JSON object
+    QString country = jsonObject["location"].toObject()["country"].toString();
+    QString name = jsonObject["location"].toObject()["name"].toString();
+    double temp_c = jsonObject["current"].toObject()["temp_c"].toDouble();
+    double wind_kph = jsonObject["current"].toObject()["wind_kph"].toDouble();
+    QString condition = jsonObject["current"].toObject()["condition"].toObject()["text"].toString();
+    int humidity = jsonObject["current"].toObject()["humidity"].toInt();
 
-    // Формирование URL для получения данных о погоде
-    QNetworkAccessManager Manager2;
-    QString keke = "http://api.weatherapi.com/v1/current.json?key=3550410010fb4e9ea7c05942230108&q=" + name;
-    QUrl APIurl2(keke);
-    QNetworkRequest request2(APIurl2);
-    QNetworkReply *reply2 = Manager2.get(request2);
-
-    // Отправка запроса и ожидание ответа
-    QEventLoop loop2;
-    QObject::connect(reply2, &QNetworkReply::finished, &loop2, &QEventLoop::quit);
-    loop2.exec();
-
-    // Чтение ответа
-    QString weather = reply2->readAll();
-    
-    // Извлечение данных из JSON-ответа
-    QJsonObject jsonObject1 = QJsonDocument::fromJson(weather.toUtf8()).object();
-    double temp_c = jsonObject1["current"].toObject()["temp_c"].toDouble();
-    double wind_kph = jsonObject1["current"].toObject()["wind_kph"].toDouble();
-    QString condition = jsonObject1["current"].toObject()["condition"].toObject()["text"].toString();
-    int humidity = jsonObject1["current"].toObject()["humidity"].toInt();
-
-    // Формирование строки с информацией о погоде
+    // Create the answer string with the extracted information
     QString answer = QString("Страна: \"%1\"\nГород: \"%2\"\nТемпература: %3°C\nВлажность: %4%\nОписание: %5\nСкорость ветра: %6м/с")
                         .arg(country)
                         .arg(name)
@@ -75,6 +65,6 @@ void MainWindow::on_pushButton_clicked()
                         .arg(condition)
                         .arg(wind_kph);
 
-    // Вывод строки в textBrowser
+    // Set the answer string as the text in the text browser widget
     ui->textBrowser->setText(answer);
 }
